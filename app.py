@@ -38,8 +38,7 @@ from pathlib import Path
 
 import gradio as gr
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
 
 HERE = Path(__file__).parent
 GAME = HERE / "game"
@@ -214,10 +213,21 @@ def space_config():
                          "api": "gradio", "slow": DEVICE == "cpu"})
 
 
+# The game's files are served by plain routes registered BEFORE Gradio is mounted at the root, so they
+# win over Gradio's own page. Gradio sits at "/" (not under a sub-path) because Hugging Face's ZeroGPU
+# looks for the @spaces.GPU functions through the Space's root Gradio app; mounted under /gradio it
+# reported "No @spaces.GPU function detected during startup".
+def _serve(path: Path):
+    return lambda: FileResponse(path)
+
+
+for _f in GAME.iterdir():
+    if _f.is_file():
+        app.add_api_route("/" if _f.name == "index.html" else "/" + _f.name, _serve(_f), methods=["GET"], include_in_schema=False)
+
 # ssr_mode=False: Hugging Face sets GRADIO_SSR_MODE=true, which would start Gradio's Node server on
 # port 7860 itself, and then this server could not bind there ("address already in use").
-app = gr.mount_gradio_app(app, api, path="/gradio", ssr_mode=False)
-app.mount("/", StaticFiles(directory=GAME, html=True), name="game")
+app = gr.mount_gradio_app(app, api, path="/", ssr_mode=False)
 
 if __name__ == "__main__":
     import uvicorn

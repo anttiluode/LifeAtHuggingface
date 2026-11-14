@@ -47,13 +47,13 @@ The AI settings in the game still offer the player's own Ollama, an OpenAI-compa
 
 ```
 app.py         FastAPI: serves game/ at /, the Space's config at /space-config,
-               and a Gradio API at /gradio with two endpoints:
+               and a Gradio API at the root (/gradio_api) with two endpoints:
                  narrate(sheet_json, prev_json, seed)  -> streamed text
                  paint(prompt, seed)                   -> JPEG data URL
 game/          the game page (index.html, app.js, engine.js, history.js, ai.js, style.css)
 ```
 
-The page asks `space-config` when it loads. If the answer comes, the page offers "This Space" as narrator and painter and uses them by default. It calls the endpoints through Gradio's plain HTTP API (`/gradio/gradio_api/call/...`, server-sent events), so it needs no extra library. On GitHub Pages or a local server, `space-config` doesn't exist and the game behaves exactly like Life2.
+The page asks `space-config` when it loads. If the answer comes, the page offers "This Space" as narrator and painter and uses them by default. It calls the endpoints through Gradio's plain HTTP API (`/gradio_api/call/...`, server-sent events), so it needs no extra library. On GitHub Pages or a local server, `space-config` doesn't exist and the game behaves exactly like Life2.
 
 **The Space can't be used as a free general-purpose generator.** The page never sends its own prompt to the narrator. The server builds the prompt from the fact sheet, using the same rules as the game: second person, 2–4 sentences, only the facts given. A picture prompt is accepted only if every word in it is a word that appears in the game's own source. Across 1,110 milestone prompts from simulated dynasties, every one passed this check. "A spaceship landing on Mars" is refused.
 

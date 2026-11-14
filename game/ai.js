@@ -195,7 +195,7 @@
     return SPACE;
   }
   async function callSpace(api, data, onPartial, maxMs) {
-    const url = new URL("gradio/gradio_api/call/" + api, location.href).href;
+    const url = new URL("gradio_api/call/" + api, location.href).href;
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), maxMs || 240000);
     try {
       const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data }), signal: ctl.signal });
