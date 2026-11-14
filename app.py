@@ -214,9 +214,11 @@ def space_config():
                          "api": "gradio", "slow": DEVICE == "cpu"})
 
 
-app = gr.mount_gradio_app(app, api, path="/gradio")
+# ssr_mode=False: Hugging Face sets GRADIO_SSR_MODE=true, which would start Gradio's Node server on
+# port 7860 itself, and then this server could not bind there ("address already in use").
+app = gr.mount_gradio_app(app, api, path="/gradio", ssr_mode=False)
 app.mount("/", StaticFiles(directory=GAME, html=True), name="game")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 7860)))
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("GRADIO_SERVER_PORT") or os.environ.get("PORT") or 7860))
