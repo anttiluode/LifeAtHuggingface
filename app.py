@@ -37,7 +37,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import gradio as gr
-from fastapi import FastAPI
+from fastapi import APIRouter
 from fastapi.responses import FileResponse, JSONResponse
 
 HERE = Path(__file__).parent
@@ -202,10 +202,10 @@ with gr.Blocks(title="Life² API") as api:
     gr.api(paint, api_name="paint", concurrency_limit=1)
 api.queue(max_size=64)
 
-app = FastAPI()
+game_routes = APIRouter()
 
 
-@app.get("/space-config")
+@game_routes.get("/space-config")
 def space_config():
     """The page asks this first; if it answers, the page offers the Space's own narrator and painter."""
     where = "ZeroGPU" if ZERO else DEVICE
@@ -213,22 +213,23 @@ def space_config():
                          "api": "gradio", "slow": DEVICE == "cpu"})
 
 
-# The game's files are served by plain routes registered BEFORE Gradio is mounted at the root, so they
-# win over Gradio's own page. Gradio sits at "/" (not under a sub-path) because Hugging Face's ZeroGPU
-# looks for the @spaces.GPU functions through the Space's root Gradio app; mounted under /gradio it
-# reported "No @spaces.GPU function detected during startup".
+# Pass the game's routes into Gradio's FastAPI app at construction time, before
+# Gradio registers its own root page. Its config, queue and API routes stay intact.
 def _serve(path: Path):
     return lambda: FileResponse(path)
 
 
 for _f in GAME.iterdir():
     if _f.is_file():
-        app.add_api_route("/" if _f.name == "index.html" else "/" + _f.name, _serve(_f), methods=["GET"], include_in_schema=False)
-
-# ssr_mode=False: Hugging Face sets GRADIO_SSR_MODE=true, which would start Gradio's Node server on
-# port 7860 itself, and then this server could not bind there ("address already in use").
-app = gr.mount_gradio_app(app, api, path="/", ssr_mode=False)
+        game_routes.add_api_route("/" if _f.name == "index.html" else "/" + _f.name, _serve(_f), methods=["GET"], include_in_schema=False)
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("GRADIO_SERVER_PORT") or os.environ.get("PORT") or 7860))
+    # Use Gradio's launch lifecycle so spaces can send its ZeroGPU startup report.
+    # A standalone uvicorn.run() bypasses the launch/start_server hooks used by
+    # some spaces versions, even when @spaces.GPU functions are registered.
+    api.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("GRADIO_SERVER_PORT") or 7860),
+        ssr_mode=False,
+        app_kwargs={"routes": game_routes.routes},
+    )

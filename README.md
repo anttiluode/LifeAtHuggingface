@@ -46,7 +46,7 @@ The AI settings in the game still offer the player's own Ollama, an OpenAI-compa
 ## How it fits together
 
 ```
-app.py         FastAPI: serves game/ at /, the Space's config at /space-config,
+app.py         Gradio launch: serves game/ at /, the Space's config at /space-config,
                and a Gradio API at the root (/gradio_api) with two endpoints:
                  narrate(sheet_json, prev_json, seed)  -> streamed text
                  paint(prompt, seed)                   -> JPEG data URL
@@ -66,6 +66,25 @@ The page asks `space-config` when it loads. If the answer comes, the page offers
 3. The first start downloads the models, which takes minutes for 7B plus SDXL-Turbo. After that the Space opens straight into the game.
 
 To run it locally: `pip install -r requirements.txt gradio==6.32.0`, then `python app.py`, then open http://localhost:7860. `LIFE2_MOCK=1 python app.py` uses stand-in models with no downloads.
+
+### Startup regression checks
+
+The server uses `api.launch()` so the `spaces` package's ZeroGPU startup hooks run.
+The game routes are passed through `app_kwargs` ahead of Gradio's own routes;
+SSR is explicitly disabled. Keep this launch path when changing the server.
+A separate `uvicorn.run()` can bypass ZeroGPU registration on some package versions.
+
+Run the lightweight checks without downloading model weights:
+
+```bash
+pip install gradio==6.32.0 pillow pytest
+python -m pytest -q
+```
+
+These checks start the real Gradio server with stand-in models, observe the server
+startup hook, and exercise the game files, configuration, streamed narration and
+JPEG response over HTTP. They do not verify GPU allocation or real-model inference;
+those still require a successful run on the deployed Space.
 
 ## Honest notes
 
