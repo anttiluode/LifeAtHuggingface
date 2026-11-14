@@ -1,0 +1,26 @@
+# Mirrors this GitHub repo to the Hugging Face Space on every push to main.
+# One-time setup in the GitHub repo settings:
+#   Secrets and variables -> Actions -> Secrets:    HF_TOKEN  = a Hugging Face token with write access
+#   Secrets and variables -> Actions -> Variables:  HF_SPACE  = e.g. anttiluode/LifeAtHuggingface
+name: Sync to Hugging Face Space
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push to the Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_SPACE" ]; then
+            echo "HF_TOKEN secret or HF_SPACE variable not set yet; nothing to sync."
+            exit 0
+          fi
+          git push --force "https://user:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}" HEAD:main

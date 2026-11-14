@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Life2 — Bloodlines</title>
+<meta name="description" content="A family through history, from Rome to now. Love is a flux; money is a fortune you can lose. Choose which child carries the line.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <main id="stage">
+    <canvas id="world" aria-label="Your life, drawn as a vine"></canvas>
+    <div id="where"><div id="whereYear"></div><div id="wherePlace"></div></div>
+    <figure id="polaroid" class="hidden">
+      <img id="polImg" alt="">
+      <figcaption><span id="polCap"></span><button id="polReroll" title="Paint it again">↻</button></figcaption>
+    </figure>
+    <div id="narr">
+      <p id="narrText"></p>
+      <div class="narrBar"><span id="narrSrc"></span><button id="narrVoice" title="Read the narration aloud">🔈 voice</button><button id="narrReroll" title="Tell this year again">↻ retell</button><button id="openBook">the book</button></div>
+    </div>
+  </main>
+
+  <aside id="panel">
+    <header>
+      <div>
+        <div class="brand">Life²</div>
+        <div class="who" id="whoLine"></div>
+      </div>
+      <div class="age"><span id="age">18</span><small>years</small></div>
+    </header>
+
+    <nav class="tabs">
+      <button data-tab="life" class="on">Life</button>
+      <button data-tab="wealth">Fortune</button>
+      <button data-tab="family">Bloodline</button>
+    </nav>
+
+    <section id="tab-life" class="tab">
+      <div class="meters">
+        <div class="meter"><label>Health</label><div class="bar"><i id="hBar"></i></div><b id="hVal"></b></div>
+        <div class="meter"><label>Warmth</label><div class="bar warm"><i id="wBar"></i></div><b id="wVal"></b></div>
+        <div class="meter money"><label>Fortune</label><b id="mVal"></b></div>
+      </div>
+      <div class="allocHead"><span>This year your attention goes to</span><span id="left" class="left"></span></div>
+      <ul id="rows"></ul>
+    </section>
+
+    <section id="tab-wealth" class="tab hidden">
+      <div class="fortune">
+        <div class="big" id="fBig"></div>
+        <div class="dim" id="fClass"></div>
+        <div class="dim" id="fWage"></div>
+      </div>
+      <h4>Where the family fortune is kept</h4>
+      <div id="assets"></div>
+      <p class="note" id="fNote"></p>
+      <h4>Last year</h4>
+      <div id="returns" class="dim"></div>
+    </section>
+
+    <section id="tab-family" class="tab hidden">
+      <h4>The line</h4>
+      <ol id="gens"></ol>
+      <h4>Who could carry it on</h4>
+      <ul id="heirs" class="dim"></ul>
+    </section>
+
+    <div class="actions">
+      <button id="live" class="primary">Live this year</button>
+      <button id="live5">Live 5 years</button>
+    </div>
+    <div class="tools">
+      <button id="bSave">Save</button><button id="bLoad">Load</button><button id="bBack">Go back</button><button id="bBook">Book</button><button id="bSet">AI</button>
+    </div>
+    <section class="log"><ol id="log"></ol></section>
+  </aside>
+</div>
+
+<!-- a fork in the road -->
+<div id="event" class="overlay hidden" role="dialog" aria-modal="true">
+  <div class="card">
+    <div class="eHead" id="eHead"></div>
+    <h2 id="eTitle"></h2>
+    <p id="eText"></p>
+    <div id="eChoices" class="choices"></div>
+  </div>
+</div>
+
+<!-- start -->
+<div id="start" class="overlay">
+  <div class="card intro wide">
+    <h1>Life²</h1>
+    <p class="tag">A family, through history. Love is still a flux.</p>
+    <p>You live one life at a time, from 18 until it ends. Every year you pour a few drops of attention into the people around you, your work, yourself. What you stop feeding withers by itself. Plagues, wars, famines and crashes arrive on their real dates. The family fortune can grow for centuries or vanish in a year. When you die, you choose which of your children carries the line on. When there is no one left, the line ends.</p>
+    <div id="continueBox" class="hidden"><button id="bContinue" class="primary">Continue</button> <span id="contInfo" class="dim"></span></div>
+    <h4>Where does your family begin?</h4>
+    <div id="starts" class="starts"></div>
+    <div class="setup">
+      <label>You are <select id="sGender"><option value="f">a woman</option><option value="m">a man</option></select></label>
+      <label>named <input id="sName" placeholder="(random)" size="10"></label>
+      <label>of the family <input id="sSurname" placeholder="(random)" size="10"></label>
+      <label>born <select id="sWealth"><option value="poor">poor</option><option value="ordinary" selected>ordinary</option><option value="rich">rich</option></select></label>
+    </div>
+    <div class="choices"><button id="bBegin" class="primary">Begin at 18</button><button id="bLoad2">Load a saved dynasty</button><button id="bSet2">AI narration and pictures</button></div>
+    <p class="dim small" id="startNote">Everything runs in your browser. With your own local models you can have every year narrated and the milestones painted: see “AI”.</p>
+  </div>
+</div>
+
+<!-- death and succession -->
+<div id="death" class="overlay hidden">
+  <div class="card wide">
+    <div class="endTop">
+      <canvas id="portrait" width="760" height="920"></canvas>
+      <div>
+        <div class="died" id="dName"></div>
+        <p class="eline" id="dLine"></p>
+        <p class="estats" id="dStats"></p>
+        <div class="cols">
+          <div><h3>Who came</h3><p id="dCame"></p></div>
+          <div><h3>What withered</h3><ul id="dWither"></ul></div>
+        </div>
+        <div id="lostBox"><h3>Lost to history</h3><ul id="dLost"></ul></div>
+      </div>
+    </div>
+    <h3 id="heirHead">Who carries the line on?</h3>
+    <div id="heirCards" class="heirCards"></div>
+    <div class="choices"><button id="savePic">Save picture</button><button id="copyText">Copy epitaph</button><button id="dBook">Read the book</button><button id="dNew" class="hidden primary">Begin a new dynasty</button></div>
+  </div>
+</div>
+
+<!-- the book -->
+<div id="book" class="overlay hidden">
+  <div class="card book">
+    <div class="bookHead"><h2 id="bookTitle"></h2><div class="choices"><button id="bookDl">Download the book</button><button id="bookClose" class="primary">Close</button></div></div>
+    <div id="bookBody"></div>
+  </div>
+</div>
+
+<!-- saves -->
+<div id="saves" class="overlay hidden">
+  <div class="card">
+    <h2>Saved dynasties</h2>
+    <ul id="saveList" class="saveList"></ul>
+    <div class="choices"><button id="saveNew">Save as a new copy</button><button id="savesClose" class="primary">Close</button></div>
+  </div>
+</div>
+
+<!-- go back -->
+<div id="rewind" class="overlay hidden">
+  <div class="card">
+    <h2>Go back</h2>
+    <p>Return to the start of an earlier year and choose differently. Everything after it is unwritten. (Save a copy first if you want to keep this version.)</p>
+    <label>Year <select id="rwYear"></select></label>
+    <div class="choices"><button id="rwGo" class="primary">Go back</button><button id="rwCopy">Save a copy first</button><button id="rwClose">Cancel</button></div>
+  </div>
+</div>
+
+<!-- AI settings -->
+<div id="settings" class="overlay hidden">
+  <div class="card wide">
+    <h2>Narration and pictures</h2>
+    <p class="dim small"><span id="privacyNote">All of this runs on your own machine. Nothing is sent anywhere else, unless you pick an online voice.</span> Without it the game uses written narration and no pictures.</p>
+    <div class="setGrid">
+      <div>
+        <h4>Narrator</h4>
+        <label><input type="radio" name="narr" value="templates"> Written (no AI)</label>
+        <label class="spaceOnly hidden"><input type="radio" name="narr" value="space"> This Space <span class="dim" id="spaceNarr"></span></label>
+        <label><input type="radio" name="narr" value="ollama"> Ollama on this computer</label>
+        <div class="sub"><input id="olUrl" size="26"> model <input id="olModel" size="14"></div>
+        <label><input type="radio" name="narr" value="openai"> Other local server (llama.cpp, LM Studio)</label>
+        <div class="sub"><input id="oaUrl" size="26"> model <input id="oaModel" size="14"></div>
+        <label><input type="radio" name="narr" value="webllm"> In this browser (WebGPU, ~1 GB download, experimental)</label>
+        <div class="testRow"><button id="testNarr">Test narrator</button><span id="outNarr" class="dim small"></span></div>
+        <h4>Voice</h4>
+        <label><input type="checkbox" id="vOn"> Read the narration aloud</label>
+        <div class="sub">voice <select id="vName"></select></div>
+        <div class="sub">speed <input id="vRate" type="range" min="0.7" max="1.3" step="0.05"> <span id="vRateOut"></span></div>
+        <p class="dim small">Uses the voices your system has. Voices marked <i>online</i> send the text to Microsoft or Google to be spoken; the others stay on this computer.</p>
+        <div class="testRow"><button id="testVoice">Test voice</button><span id="outVoice" class="dim small"></span></div>
+      </div>
+      <div>
+        <h4>Painter</h4>
+        <label><input type="radio" name="paint" value="none"> No pictures</label>
+        <label class="spaceOnly hidden"><input type="radio" name="paint" value="space"> This Space <span class="dim" id="spacePaint"></span></label>
+        <label><input type="radio" name="paint" value="local"> Local painter (SDXL-Turbo on your GPU)</label>
+        <div class="sub"><input id="pUrl" size="26"></div>
+        <label><input type="checkbox" id="makeRoom"> Make room for the painter: unload the narrator before each picture (one graphics card)</label>
+        <pre class="howto">python local/painter_server.py
+:: wait for "painter ready", then test</pre>
+        <div class="testRow"><button id="testPaint">Test painter</button><span id="outPaint" class="dim small"></span></div>
+        <img id="paintTestImg" class="testImg hidden" alt="test picture">
+      </div>
+    </div>
+    <div class="choices"><button id="setSave" class="primary">Save</button><button id="setClose">Close</button></div>
+  </div>
+</div>
+
+<script src="history.js"></script>
+<script src="engine.js"></script>
+<script src="ai.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

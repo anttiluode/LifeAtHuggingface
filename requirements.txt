@@ -1,0 +1,9 @@
+torch
+transformers>=4.45
+diffusers>=0.31
+accelerate
+safetensors
+pillow
+fastapi
+uvicorn
+spaces
